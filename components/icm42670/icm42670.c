@@ -468,16 +468,16 @@ esp_err_t icm42670_init(icm42670_t *dev)
         ESP_LOGE(TAG, "Error initializing ICM42670, who_am_i register did not return 0x67");
         return ESP_ERR_INVALID_RESPONSE;
     }
-    ESP_LOGD(TAG, "Init: Chip ICM42670 detected");
+    ESP_LOGI(TAG, "Init: Chip ICM42670 detected");
 
     // flush FIFO
     CHECK(icm42670_flush_fifo(dev));
     // perform signal path reset
     CHECK(icm42670_reset(dev));
-    ESP_LOGD(TAG, "Init: Soft-Reset performed");
+    ESP_LOGI(TAG, "Init: Soft-Reset performed");
 
     // wait 10ms
-    vTaskDelay(pdMS_TO_TICKS(10));
+    vTaskDelay(pdMS_TO_TICKS(50));
 
     // set device in IDLE power state
     CHECK(icm42670_set_idle_pwr_mode(dev, true));
@@ -493,7 +493,7 @@ esp_err_t icm42670_init(icm42670_t *dev)
         ESP_LOGE(TAG, "Error initializing icm42670, Internal clock not running");
         return ESP_ERR_INVALID_RESPONSE;
     }
-    ESP_LOGD(TAG, "Init: Internal clock running");
+    ESP_LOGI(TAG, "Init: Internal clock running");
 
     return ESP_OK;
 }
@@ -823,7 +823,7 @@ esp_err_t icm42670_apex_config2(icm42670_t *dev, bool enable)
     // I2C_DEV_CHECK(&dev->i2c_dev, read_mreg_register(dev,0,0x44, &reg));
     // I2C_DEV_GIVE_MUTEX(&dev->i2c_dev);
     // printf("Before check: %u\n",reg);
-    CHECK(manipulate_mreg_register(dev,ICM42670_MREG1_RW, APEX_CONFIG2, 0xF0,4, 0x0A));
+    CHECK(manipulate_mreg_register(dev,ICM42670_MREG1_RW, APEX_CONFIG2, 0xFF,0, 0xAF));
 
     // I2C_DEV_TAKE_MUTEX(&dev->i2c_dev);
     // I2C_DEV_CHECK(&dev->i2c_dev, read_mreg_register(dev,0,0x44, &reg));
@@ -835,14 +835,14 @@ esp_err_t icm42670_apex_config2(icm42670_t *dev, bool enable)
 esp_err_t icm42670_apex_config3(icm42670_t *dev,bool enable)
 {
     CHECK_ARG(dev);
-    CHECK(manipulate_mreg_register(dev,ICM42670_MREG1_RW, APEX_CONFIG3, 0xFF,0, 0x85));
+    CHECK(manipulate_mreg_register(dev,ICM42670_MREG1_RW, APEX_CONFIG3, 0xFF,0, 0x80));
     return ESP_OK;
 }
 
 esp_err_t icm42670_apex_config4(icm42670_t *dev,bool enable)
 {
     CHECK_ARG(dev);
-    CHECK(manipulate_mreg_register(dev,ICM42670_MREG1_RW, APEX_CONFIG4, 0xFF,0, 0x54));
+    CHECK(manipulate_mreg_register(dev,ICM42670_MREG1_RW, APEX_CONFIG4, 0xFF,0, 0x51));
     return ESP_OK;
 }
 
@@ -942,21 +942,53 @@ esp_err_t icm42670_power_up(icm42670_t *dev,bool enable)
     return ESP_OK;
 }
 
-esp_err_t icm42670_activity_class(icm42670_t *dev, bool enable)
+esp_err_t icm42670_activity_class(icm42670_t *dev, uint8_t data)
 {
     uint8_t reg;
     I2C_DEV_TAKE_MUTEX(&dev->i2c_dev);
-    I2C_DEV_CHECK(&dev->i2c_dev, read_register(dev,0x3C, &reg));
+    I2C_DEV_CHECK(&dev->i2c_dev, read_register(dev,0x3B, &reg));
+    // I2C_DEV_CHECK(&dev->i2c_dev, read_register(dev,0x1F, &data));
     I2C_DEV_GIVE_MUTEX(&dev->i2c_dev);
     // reg=(reg & ~0x03) | (0x00<<0);
     // reg=reg&0b00000011;
-    printf("activity:%u\n",reg);   
-    return ESP_OK;
+    
+    // if(data!=reg)
+    // {
+    //    printf("Steps:%u\n",reg);   
+    //    printf("Data:%u\n",data);
+    // }
+
+    // // printf("apex_config 0:%u\n",data); 
+
+    // // printf("Steps:%u\n",reg);
+    // data=reg;
+    // printf("------------\n");
+    return reg;
 }
 
 esp_err_t read_all_reg(icm42670_t *dev, icm42670_reg_addr_t reg_addr)
 {
-     uint8_t reg; 
-     read_register(dev,reg_addr,0);
+     uint8_t reg=0; 
+     read_mreg_register(dev,0,0x44,reg);
+     printf("config2: %u\n",reg);
      return ESP_OK;
+}
+
+esp_err_t read_all_m_reg(icm42670_t *dev, bool enable)
+{
+
+    CHECK_ARG(dev);
+
+    uint8_t reg;
+    // I2C_DEV_TAKE_MUTEX(&dev->i2c_dev);
+    // I2C_DEV_CHECK(&dev->i2c_dev, read_mreg_register(dev,0,0x44, &reg));
+    // I2C_DEV_GIVE_MUTEX(&dev->i2c_dev);
+    // printf("Before check: %u\n",reg);
+    CHECK(manipulate_mreg_register(dev,ICM42670_MREG1_RW, APEX_CONFIG2, 0x00,0, 0x00));
+
+    // I2C_DEV_TAKE_MUTEX(&dev->i2c_dev);
+    // I2C_DEV_CHECK(&dev->i2c_dev, read_mreg_register(dev,0,0x44, &reg));
+    // I2C_DEV_GIVE_MUTEX(&dev->i2c_dev);
+    // printf("After check: %u\n",reg);
+    return ESP_OK;
 }

@@ -630,7 +630,7 @@ esp_err_t icm42670_intr_source7(icm42670_t *dev,bool enable);
 
 esp_err_t icm42670_ped_enable(icm42670_t *dev,bool enable);
 
-esp_err_t icm42670_activity_class(icm42670_t *dev, bool enable);
+esp_err_t icm42670_activity_class(icm42670_t *dev, uint8_t data);
 
 esp_err_t icm42670_power_up(icm42670_t *dev,bool enable);
 
@@ -647,6 +647,8 @@ esp_err_t icm42670_smd_sen_sel(icm42670_t *dev,bool enable);
 esp_err_t accel_config1(icm42670_t *dev, bool enable);
 
 esp_err_t read_all_reg(icm42670_t *dev, icm42670_reg_addr_t reg_addr);
+
+esp_err_t read_all_m_reg(icm42670_t *dev, bool enable);
 
 #ifdef __cplusplus
 }
